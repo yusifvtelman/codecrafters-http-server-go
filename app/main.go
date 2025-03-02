@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"net"
 	"os"
+	"strings"
 )
 
 var _ = net.Listen
@@ -21,6 +23,26 @@ func main() {
 		fmt.Println("Error accepting connection: ", err.Error())
 		os.Exit(1)
 	}
+	defer conn.Close()
 
-	conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+	reader := bufio.NewReader(conn)
+	request, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Println("Error reading request. ", err.Error())
+		os.Exit(1)
+	}
+
+	parts := strings.Split(strings.TrimSpace(request), " ")
+	if len(parts) != 3 {
+		fmt.Println("Invalid request")
+		os.Exit(1)
+	}
+
+	path := parts[1]
+
+	if path == "/" {
+		conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+	} else {
+		conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+	}
 }
