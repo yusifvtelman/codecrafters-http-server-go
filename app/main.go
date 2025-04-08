@@ -18,28 +18,31 @@ func main() {
 		os.Exit(1)
 	}
 
-	conn, err := l.Accept()
-	if err != nil {
-		fmt.Println("Error accepting connection: ", err.Error())
-		os.Exit(1)
+	for {
+		conn, err := l.Accept()
+		if err != nil {
+			fmt.Println("Error accepting connection: ", err.Error())
+			continue
+		}
+		go handleConnection(conn)
 	}
-	defer conn.Close()
 
+}
+
+func handleConnection(conn net.Conn) {
+	defer conn.Close()
 	reader := bufio.NewReader(conn)
 	request, err := reader.ReadString('\n')
 	if err != nil {
-		fmt.Println("Error reading request. ", err.Error())
-		os.Exit(1)
+		fmt.Println("Error reading request: ", err.Error())
+		return
 	}
-
 	parts := strings.Split(strings.TrimSpace(request), " ")
 	if len(parts) != 3 {
 		fmt.Println("Invalid request")
-		os.Exit(1)
+		return
 	}
-
 	path := parts[1]
-
 	if path == "/" {
 		conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
 	} else {
